@@ -1,0 +1,9 @@
+# Ignore virtual environment
+.venv
+
+# Ignore contents of Data folder and subfolders, but keep the folder structure
+/Data/*
+!/Data/.gitkeep
+!/Data/*/
+/Data/*/*
+!/Data/*/.gitkeep
