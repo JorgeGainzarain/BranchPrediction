@@ -1,12 +1,11 @@
 import csv
 import os
-from typing import List, Tuple, Set
 
+from rich.console import Console
 from rich import box
 from rich.table import Table
 from colorama import init, Fore, Style
 from src.Task1 import Branch, BranchPredictor
-
 
 filesFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'Data', 'txt'))
 csvFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'Data', 'csv'))
@@ -14,9 +13,9 @@ csvFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 
 file_list = [f for f in os.listdir(filesFolder) if f.endswith('.txt')]
 file_list.sort(key=lambda x: os.path.getsize(os.path.join(filesFolder, x)))
 
-csv_file = os.path.join(os.path.dirname(os.path.join(csvFolder, file_list[0])), 'analyzed_files.csv')
+csv_file = os.path.join(csvFolder, 'analyzed_files.csv')
 
-
+rich_console = Console(color_system="auto")
 init(autoreset=True)  # Initialize colorama with auto reset
 
 def print_colored(text, color=Fore.WHITE, style=Style.NORMAL, end='\n'):
@@ -62,6 +61,7 @@ def createTable(sizes, accuracies) -> Table:
 
 
 def getBestSizes():
+    if file_list.__len__() == 0: return None
     # Try to load existing results from CSV
     table : Table = load_results_from_csv(csv_file)
     
@@ -94,8 +94,9 @@ def getBestSizes():
 
             while size <= max_size:
                 predictor = BranchPredictor(size)
-                correct_predictions = predictor.predictBranch(branch)
-                accuracy = round((correct_predictions / len(branch)) * 100, 2)
+                analysisTable = predictor.predictBranch(branch)
+
+                accuracy = float(list(analysisTable.columns[1].cells)[6].replace("%", ""))
 
                 print_colored(f"Size: {size}, Accuracy: {accuracy}%", Fore.WHITE)
 

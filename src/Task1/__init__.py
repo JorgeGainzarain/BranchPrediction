@@ -1,8 +1,10 @@
 import os
 import inquirer
+from colorama import Fore, Style
+
 from src.Task1.Branch import Branch
 from src.Task1.BranchPredictor import BranchPredictor
-from src.utils.utils import save_results_to_csv, getBestSizes, filesFolder, file_list
+from src.utils.utils import save_results_to_csv, getBestSizes, filesFolder, file_list, print_colored
 from rich.console import Console
 
 
@@ -11,7 +13,13 @@ rich_console = Console(color_system="auto")
 
 def main():
     table = getBestSizes()
+
+    if table is None:
+        print_colored("No branches found! (Please add branches as txt files inside Data/txt)", Fore.RED, Style.BRIGHT)
+        return
+
     rich_console.print(table)
+
 
     files = list(table.columns[0].cells)
     sizes = list(table.columns[1].cells)

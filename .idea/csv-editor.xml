@@ -3,21 +3,7 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
-        <entry key="\Data\csv\gcc-10K.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\Data\csv\gcc-16M.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\Data\csv\gcc-8M.csv">
+        <entry key="\Data\csv\analyzed_files.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -25,6 +11,13 @@
           </value>
         </entry>
         <entry key="\Data\csv\results\gcc-10K.txt_2048.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\Data\csv\results\gcc-16M.txt_8192.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
