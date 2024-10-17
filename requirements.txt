@@ -1,3 +1,4 @@
 colorama
 rich
 numpy
+inquirer

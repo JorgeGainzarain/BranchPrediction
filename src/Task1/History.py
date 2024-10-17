@@ -18,4 +18,4 @@ class History(OrderedDict[str,str]):
         if address in self:
             return self[address]
         else:
-            return 'N'
+            return ''

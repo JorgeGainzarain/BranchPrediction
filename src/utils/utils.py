@@ -1,33 +1,52 @@
 import csv
 import os
+from typing import List, Tuple, Set
 
 from rich import box
 from rich.table import Table
+from colorama import init, Fore, Style
+from src.Task1 import Branch, BranchPredictor
 
-def save_results_to_csv(table: Table, csv_file: str):
+
+filesFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'Data', 'txt'))
+csvFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'Data', 'csv'))
+
+file_list = [f for f in os.listdir(filesFolder) if f.endswith('.txt')]
+file_list.sort(key=lambda x: os.path.getsize(os.path.join(filesFolder, x)))
+
+csv_file = os.path.join(os.path.dirname(os.path.join(csvFolder, file_list[0])), 'analyzed_files.csv')
+
+
+init(autoreset=True)  # Initialize colorama with auto reset
+
+def print_colored(text, color=Fore.WHITE, style=Style.NORMAL, end='\n'):
+    print(f"{style}{color}{text}{Style.RESET_ALL}", end=end)
+def save_results_to_csv(table: Table, csvName: str):
     # Ensure the directory exists
-    os.makedirs(os.path.dirname(csv_file), exist_ok=True)
+    csvPath = os.path.join(csvFolder, csvName)
+    os.makedirs(os.path.dirname(csvPath), exist_ok=True)
     
-    with open(csv_file, 'w', newline='') as file:
+    with open(csvPath, 'w', newline='') as file:
         writer = csv.writer(file)
 
         # Write headers
         writer.writerow([column.header for column in table.columns])
+
+        # Get all cell values for each column
+        column_cells = [column.cells for column in table.columns]
         
-        # Write data
-        sizes = table.columns[0].cells
-        accuracies = table.columns[1].cells
-        rows = list(zip(sizes, accuracies))
+        # Zip the cells from all columns to create rows
+        rows = list(zip(*column_cells))
         
         # Write all rows except the last one
-        for row in rows[:-1]:
-            writer.writerow(row)
+        writer.writerows(rows[:-1])
         
         # Write the last row without a newline
         if rows:
             file.write(','.join(str(cell) for cell in rows[-1]))
 
-    return csv_file
+    print_colored(f"Results saved to {csvPath}", Fore.GREEN, Style.BRIGHT)
+
 
 def createTable(sizes, accuracies) -> Table:
     # Create and display the table using rich
@@ -40,3 +59,85 @@ def createTable(sizes, accuracies) -> Table:
         table.add_row(str(size), f"{accuracy:.2f}")
 
     return table
+
+
+def getBestSizes():
+    # Try to load existing results from CSV
+    table : Table = load_results_from_csv(csv_file)
+    
+    if table:
+        print_colored("Loaded existing results from CSV.", Fore.GREEN, Style.BRIGHT)
+        processed_files = table.columns[0].cells
+    else:
+        table = Table(title="Best Sizes and Accuracies")
+        table.add_column("File Name", style="cyan")
+        table.add_column("Best Size", style="magenta")
+        table.add_column("Best Accuracy", style="green")
+        processed_files = set()
+
+    # Process remaining files
+    remaining_files = [f for f in file_list if os.path.basename(f) not in processed_files]
+    
+    if remaining_files:
+        print_colored("Processing files " + remaining_files.__str__()  , Fore.CYAN, Style.BRIGHT)
+
+        last_best_size = 1
+
+        for file in remaining_files:
+            print_colored(f"Processing {os.path.basename(file)}...", Fore.CYAN, Style.BRIGHT)
+            branch = Branch(os.path.join(filesFolder, file))
+
+            size = last_best_size
+            best_accuracy = 0
+            best_size = size
+            max_size = len(branch)
+
+            while size <= max_size:
+                predictor = BranchPredictor(size)
+                correct_predictions = predictor.predictBranch(branch)
+                accuracy = round((correct_predictions / len(branch)) * 100, 2)
+
+                print_colored(f"Size: {size}, Accuracy: {accuracy}%", Fore.WHITE)
+
+                if accuracy < best_accuracy + 0.01:
+                    break
+                elif accuracy > best_accuracy:
+                    best_accuracy = accuracy
+                    best_size = size
+
+                size *= 2
+
+            print()
+            print_colored(f"Best size: {best_size}", Fore.GREEN, Style.BRIGHT)
+            print_colored(f"Best accuracy: {best_accuracy:.2f}%", Fore.GREEN, Style.BRIGHT)
+
+            table.add_row(os.path.basename(file), str(best_size), f"{best_accuracy:.2f}%")
+            last_best_size = best_size
+
+        save_results_to_csv(table, csv_file)
+        print_colored(f"Updated results saved to {csv_file}", Fore.GREEN, Style.BRIGHT)
+    else:
+        print_colored("All files have been processed previously.", Fore.GREEN, Style.BRIGHT)
+
+    return table
+
+def load_results_from_csv(csvPath) -> Table | None:
+    try:
+        with open(csvPath, 'r', newline='') as file:
+            reader = csv.reader(file)
+            headers = next(reader)
+            
+            table = Table(title="Best Sizes and Accuracies")
+            table.add_column(headers[0], style="cyan")
+            table.add_column(headers[1], style="magenta")
+            table.add_column(headers[2], style="green")
+            
+            processed_files = set()
+            for row in reader:
+                table.add_row(*row)
+                processed_files.add(row[0])  # Add filename to processed set
+            
+            return table
+    except Exception as e:
+        print_colored(f"Error loading CSV: {e}", Fore.RED, Style.BRIGHT)
+        return None
