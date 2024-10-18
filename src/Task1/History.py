@@ -43,6 +43,13 @@ class History(OrderedDict[str,Tuple[str,int,int]]):
         predicted += 1 if prediction == outcome else 0
         total += 1
 
+        if predicted / total > 0.5:
+            value = lastValue if lastValue != '' else outcome
+        else :
+            # If we are changing the value we invert the accuracy
+            value = outcome
+            predicted = total - predicted
+
         value = lastValue if lastValue != '' and predicted / total > 0.5 else outcome
 
         currSize = len(self)
