@@ -2,3 +2,5 @@ colorama
 rich
 numpy
 inquirer
+matplotlib
+seaborn

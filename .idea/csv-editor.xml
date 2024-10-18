@@ -10,20 +10,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\Data\csv\results\gcc-10K.txt_2048.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\Data\csv\results\gcc-16M.txt_8192.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
       </map>
     </option>
   </component>

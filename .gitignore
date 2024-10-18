@@ -6,4 +6,5 @@
 !/Data/.gitkeep
 !/Data/*/
 /Data/*/*
+!/Data/csv/analyzed_files.csv
 !/Data/*/.gitkeep
