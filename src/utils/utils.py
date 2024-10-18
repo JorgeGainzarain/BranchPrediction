@@ -14,7 +14,7 @@ csvFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 
 file_list = [f for f in os.listdir(filesFolder) if f.endswith('.txt')]
 file_list.sort(key=lambda x: os.path.getsize(os.path.join(filesFolder, x)))
 
-csv_file = os.path.join(csvFolder, 'analyzed_files.csv')
+csv_file = os.path.join(csvFolder, 'optimal_sizes.csv')
 
 rich_console = Console(color_system="auto")
 init(autoreset=True)  # Initialize colorama with auto reset
@@ -64,15 +64,16 @@ def createTable(sizes, accuracies) -> Table:
 import concurrent.futures
 import numpy as np
 
-import math
-
 from rich.table import Table
 
 
+def existsOptimalSizes():
+    return os.path.exists(csv_file)
 
-def getBestSizes():
+def getOptimalSize():
     if not file_list:
         return None
+
     start_time = time.time()
 
     table = load_results_from_csv(csv_file) or Table(title="Best Sizes and Accuracies")
@@ -106,7 +107,9 @@ def getBestSizes():
 def process_file(file):
     start_time = time.time()
     print_colored(f"Processing {os.path.basename(file)}...", Fore.CYAN, Style.BRIGHT)
-    branch = Branch(os.path.join(filesFolder, file))
+    branch = Branch(os.path.join(filesFolder, file), progress=False)
+
+
     rich_console.print(f"Processing time reading {file}: {time.time() - start_time:.2f} seconds")
 
     # Start with the file length as the initial size
@@ -154,7 +157,7 @@ def load_results_from_csv(csvPath) -> Table | None:
             reader = csv.reader(file)
             headers = next(reader)
             
-            table = Table(title="Best Sizes and Accuracies")
+            table = Table(title="Optimal Sizes")
             table.add_column(headers[0], style="cyan")
             table.add_column(headers[1], style="magenta")
             table.add_column(headers[2], style="green")
