@@ -14,6 +14,7 @@ rich_console = Console(color_system="auto")
 
 def main():
 
+
     table = getBestSizes()
 
     if table is None:

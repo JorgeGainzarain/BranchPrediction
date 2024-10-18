@@ -1,4 +1,4 @@
-File Name,Best Size,Best Prediction Accuracy,Execution Time (s)
-gcc-10K.txt,5000,75.69%,0.03
-gcc-8M.txt,4257676,90.08%,22.41
-gcc-16M.txt,15199417,87.70%,45.11
+File Name,Best Size,Best Prediction Accuracy,Approximated Execution Time (s)
+gcc-10K.txt,1925,75.69%,0.05
+gcc-8M.txt,396243,90.08%,30.25
+gcc-16M.txt,1482801,87.70%,52.27

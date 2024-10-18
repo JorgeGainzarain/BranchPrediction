@@ -73,13 +73,14 @@ from rich.table import Table
 def getBestSizes():
     if not file_list:
         return None
+    start_time = time.time()
 
     table = load_results_from_csv(csv_file) or Table(title="Best Sizes and Accuracies")
     if not table.columns:
         table.add_column("File Name", style="cyan")
         table.add_column("Best Size", style="magenta")
         table.add_column("Best Prediction Accuracy", style="green")
-        table.add_column("Execution Time (s)", style="yellow")
+        table.add_column("Approximated Execution Time (s)", style="yellow")
 
     processed_files = set(table.columns[0].cells)
     remaining_files = [f for f in file_list if os.path.basename(f) not in processed_files]
@@ -97,6 +98,9 @@ def getBestSizes():
             table.add_row(filename, str(best_size), f"{best_accuracy:.2f}%", f"{execution_time:.2f}")
 
     save_results_to_csv(table, csv_file)
+
+    print(f"Total time for estimating sizes: {time.time() - start_time:.4f} seconds")
+
     return table
 
 def process_file(file):
@@ -105,10 +109,10 @@ def process_file(file):
     branch = Branch(os.path.join(filesFolder, file))
     rich_console.print(f"Processing time reading {file}: {time.time() - start_time:.2f} seconds")
 
-    # Start with half the file length as the initial size
-    initial_size = len(branch) // 2
-    sizes = [initial_size] + list(np.logspace(np.log2(initial_size), np.log2(len(branch)), num=10, base=2, dtype=int))
-    sizes = sorted(set(sizes))  # Remove duplicates and sort
+    # Start with the file length as the initial size
+    initial_size = len(branch)
+    sizes = list(np.logspace(np.log2(initial_size), 2, num=20, base=2, dtype=int))[::-1]  # Reverse order
+    sizes = sorted(set(sizes), reverse=True)  # Remove duplicates and sort in descending order
 
     best_accuracy = 0
     best_size = sizes[0]
@@ -117,29 +121,32 @@ def process_file(file):
     for size in sizes:
         start_time = time.time()
         predictor = BranchPredictor(size)
-        analysisTable = predictor.predictBranch(branch)
+        analysisTable = predictor.predictBranch(branch, progress=False)
         execution_time = time.time() - start_time
         rich_console.print(f"Processing time for {file} (size {size}): {execution_time:.2f} seconds")
 
         pred_accuracy = float(list(analysisTable.columns[2].cells)[7].replace("%", ""))
         print_colored(f"Size: {size}, Prediction accuracy: {pred_accuracy}%, Time: {execution_time:.2f}s", Fore.WHITE)
 
-        # Update best results if accuracy is better or if accuracy is the same but time is better
-        if pred_accuracy > best_accuracy or (pred_accuracy == best_accuracy and execution_time < best_execution_time):
+        if size == sizes[0]:  # First iteration
             best_accuracy = pred_accuracy
             best_size = size
             best_execution_time = execution_time
-        elif pred_accuracy < best_accuracy - 0.01 and size > best_size:
-            # If accuracy starts decreasing significantly and we're past the best size, stop
-            break
+        else:
+            # Update best results if accuracy is not worse and time is not more than 1 second worse
+            if pred_accuracy >= best_accuracy - 0.01 and execution_time <= best_execution_time + 1:
+                best_accuracy = pred_accuracy
+                best_size = size
+                best_execution_time = execution_time
+            else:
+                # If accuracy or time gets worse, stop
+                break
 
     print_colored(f"Best size for {file}: {best_size}", Fore.GREEN, Style.BRIGHT)
     print_colored(f"Best prediction accuracy for {file}: {best_accuracy:.2f}%", Fore.GREEN, Style.BRIGHT)
     print_colored(f"Execution time for best size: {best_execution_time:.2f}s", Fore.GREEN, Style.BRIGHT)
 
     return os.path.basename(file), best_size, best_accuracy, best_execution_time
-
-
 
 def load_results_from_csv(csvPath) -> Table | None:
     try:
@@ -151,6 +158,7 @@ def load_results_from_csv(csvPath) -> Table | None:
             table.add_column(headers[0], style="cyan")
             table.add_column(headers[1], style="magenta")
             table.add_column(headers[2], style="green")
+            table.add_column(headers[3], style="yellow")
             
             processed_files = set()
             for row in reader:

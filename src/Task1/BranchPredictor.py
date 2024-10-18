@@ -68,7 +68,7 @@ class BranchPredictor:
                 equality = "==" if value == taken else "!="
                 print(f"{address} : ({value} {equality} {taken})")
 
-            # Log progress every 10%
+            # Log progress every 10% unless user specified otherwise
             if index == next_progress and progress:
                 progress_percentage = math.ceil((index * 100) / total_branches)
                 console.print(f"Progress: {progress_percentage}% - Processed {index} out of {total_branches} branches")
