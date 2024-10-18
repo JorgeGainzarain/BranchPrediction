@@ -2,8 +2,8 @@
 import os
 import time
 from typing import Dict, Tuple
-
 from rich.console import Console
+from rich.progress import Progress, TaskID
 
 size = 1000
 

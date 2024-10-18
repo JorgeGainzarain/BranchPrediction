@@ -43,25 +43,29 @@ def main():
     ])
 
     selectedFiles = answers['files']
-    print(f"Predicting branch outcomes for files: {selectedFiles}")
+    print(f"Files selected: {selectedFiles}")
 
     for row in list(zip(files, sizes)):
         file = row[0]
         size = int(row[1])
         if file in selectedFiles:
+            print(f"Processing file: {file} with history size: {size}")
             start_time = time.time()
-            print(f"Predicting branch outcomes for file: {file}")
+
+            # Read file
             filePath = os.path.join(filesFolder, file)
             branch = Branch(filePath.__str__())
+
+            # Predict
             predictor = BranchPredictor(size)
 
+            # Print and save results to CSV file
             analysis = predictor.predictBranch(branch)
-
-            
             analysis.title = f"\nAnalysis for {file} with size {size}"
             rich_console.print(analysis)
             save_results_to_csv(analysis, f"results/{file}_{size}.csv")
-            
+
+            # log the processing time
             rich_console.print(f"Processing time for {file}: {time.time() - start_time:.2f} seconds")
 
 

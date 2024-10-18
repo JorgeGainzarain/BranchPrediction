@@ -6,6 +6,8 @@ from rich import box
 from src.Task1 import Branch
 from src.Task1.History import History
 from rich.console import Console
+from rich.progress import Progress, TaskID
+
 console = Console(color_system="auto")
 
 class BranchPredictor:
@@ -37,43 +39,52 @@ class BranchPredictor:
     def predictBranch(self, branch: Branch, verbose: bool = False, progress: bool = True) -> Table:
         correct_predictions = correct = incorrect = miss_predictions = traces = address_replacement = accurate_replacements = 0
         total_branches = len(branch)
-        progress_step = max(0, total_branches // 10)
-        next_progress = progress_step
-
+    
         history_get = self.history_map.get
         history_set = self.history_map.set
         default_pred = self.default_pred
-
-        for index, (address, taken) in enumerate(branch, 0):
-            traces += 1
-            prediction = history_get(address)
-            value = default_pred if prediction == '' else prediction
-
-            was_replaced, was_accurate = history_set(address, prediction, taken)
-            address_replacement += was_replaced
-            accurate_replacements += was_accurate
-
-            if prediction:  # Valid prediction
-                if prediction == taken:
-                    correct_predictions += 1
+    
+        update_interval = max(1, total_branches // 100)  # Update progress every 1% or at least once
+        progress_count = 0
+    
+        with Progress() as progress_bar:
+            if progress:
+                task: TaskID = progress_bar.add_task("[cyan]Predicting branches...", total=total_branches)
+    
+            for index, (address, taken) in enumerate(branch, 0):
+                traces += 1
+                prediction = history_get(address)
+                value = default_pred if prediction == '' else prediction
+    
+                was_replaced, was_accurate = history_set(address, prediction, taken)
+                address_replacement += was_replaced
+                accurate_replacements += was_accurate
+    
+                if prediction:  # Valid prediction
+                    if prediction == taken:
+                        correct_predictions += 1
+                    else:
+                        miss_predictions += 1
+    
+                if value == taken:
+                    correct += 1
                 else:
-                    miss_predictions += 1
-
-            if value == taken:
-                correct += 1
-            else:
-                incorrect += 1
-
-            if verbose:
-                equality = "==" if value == taken else "!="
-                print(f"{address} : ({value} {equality} {taken})")
-
-            # Log progress every 10% unless user specified otherwise
-            if index == next_progress and progress:
-                progress_percentage = math.ceil((index * 100) / total_branches)
-                console.print(f"Progress: {progress_percentage}% - Processed {index} out of {total_branches} branches")
-                next_progress += progress_step
-
+                    incorrect += 1
+    
+                if verbose:
+                    equality = "==" if value == taken else "!="
+                    print(f"{address} : ({value} {equality} {taken})")
+    
+                # Update progress bar less frequently
+                progress_count += 1
+                if progress and progress_count >= update_interval:
+                    progress_bar.update(task, advance=progress_count, description=f"[cyan]Predicted {traces}/{total_branches} branches")
+                    progress_count = 0
+    
+        # Final update to ensure we reach 100%
+        if progress and progress_count > 0:
+            progress_bar.update(task, advance=progress_count, description=f"[cyan]Predicted {total_branches}/{total_branches} branches")
+    
         self.correct_predictions = correct_predictions
         self.correct = correct
         self.incorrect = incorrect
@@ -81,7 +92,7 @@ class BranchPredictor:
         self.traces = traces
         self.addressReplacement = address_replacement
         self.accurateReplacements = accurate_replacements
-
+    
         return self.analysisTable()
 
     def analysisTable(self) -> Table:
