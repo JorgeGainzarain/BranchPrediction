@@ -46,7 +46,7 @@ def main():
 
     for row in list(zip(files, sizes)):
         file = row[0]
-        size = 425767#int(row[1])
+        size = int(row[1])
         if file in selectedFiles:
             start_time = time.time()
             print(f"Predicting branch outcomes for file: {file}")

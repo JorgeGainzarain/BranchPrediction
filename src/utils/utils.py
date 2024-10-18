@@ -64,70 +64,12 @@ def createTable(sizes, accuracies) -> Table:
 import concurrent.futures
 import numpy as np
 
+import math
 
-def getBestSizes():
-    if file_list.__len__() == 0: return None
-    # Try to load existing results from CSV
-    table: Table = load_results_from_csv(csv_file)
+from rich.table import Table
 
-    if table:
-        print_colored("Loaded existing results from CSV.", Fore.GREEN, Style.BRIGHT)
-        processed_files = table.columns[0].cells
-    else:
-        table = Table(title="Best Sizes and Accuracies")
-        table.add_column("File Name", style="cyan")
-        table.add_column("Best Size", style="magenta")
-        table.add_column("Best Accuracy", style="green")
-        processed_files = set()
 
-    # Process remaining files
-    remaining_files = [f for f in file_list if os.path.basename(f) not in processed_files]
 
-    if remaining_files:
-        print_colored("Processing files " + remaining_files.__str__(), Fore.CYAN, Style.BRIGHT)
-
-        last_best_size = 1
-
-        for file in remaining_files:
-            print_colored(f"Processing {os.path.basename(file)}...", Fore.CYAN, Style.BRIGHT)
-            branch = Branch(os.path.join(filesFolder, file))
-
-            size = last_best_size
-            best_accuracy = 0
-            best_size = size
-            max_size = len(branch)
-
-            while size <= max_size:
-                predictor = BranchPredictor(size)
-                analysisTable = predictor.predictBranch(branch)
-
-                accuracy = float(list(analysisTable.columns[1].cells)[6].replace("%", ""))
-
-                print_colored(f"Size: {size}, Accuracy: {accuracy}%", Fore.WHITE)
-
-                if accuracy < best_accuracy + 0.01:
-                    break
-                elif accuracy > best_accuracy:
-                    best_accuracy = accuracy
-                    best_size = size
-
-                size *= 2
-
-            print()
-            print_colored(f"Best size: {best_size}", Fore.GREEN, Style.BRIGHT)
-            print_colored(f"Best accuracy: {best_accuracy:.2f}%", Fore.GREEN, Style.BRIGHT)
-
-            table.add_row(os.path.basename(file), str(best_size), f"{best_accuracy:.2f}%")
-            last_best_size = best_size
-
-        save_results_to_csv(table, csv_file)
-        print_colored(f"Updated results saved to {csv_file}", Fore.GREEN, Style.BRIGHT)
-    else:
-        print_colored("All files have been processed previously.", Fore.GREEN, Style.BRIGHT)
-
-    return table
-
-"""
 def getBestSizes():
     if not file_list:
         return None
@@ -197,7 +139,7 @@ def process_file(file):
 
     return os.path.basename(file), best_size, best_accuracy, best_execution_time
 
-"""
+
 
 def load_results_from_csv(csvPath) -> Table | None:
     try:
