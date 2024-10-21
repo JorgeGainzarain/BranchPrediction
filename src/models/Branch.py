@@ -19,7 +19,6 @@ class Branch(List[Tuple[str, str]]):
         if external_progress and external_task_id is not None:
             progress = external_progress
             task = external_task_id
-            update_interval = max(1, lines_to_read // 10)  # Update every 10% for external progress
         elif progress_toggle:
             progress = Progress()
             task = progress.add_task("[cyan]Loading branches...", total=lines_to_read)

@@ -1,16 +1,18 @@
-import time
+
 
 from rich.console import Console
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
-from rich.table import Table
+
 
 from src.models.OneBitPredictor import OneBitPredictor
+from src.models.TwoBitPredictor import TwoBitPredictor
+from src.models.ImprovedPredictor import ImprovedPredictor
+
 from src.models.Branch import Branch
 import os
 import concurrent.futures
 
-from src.models.TwoBitPredictor import TwoBitPredictor
-from src.utils.utils import saveResults, load_results_from_csv, save_table_to_csv, getLines
+from src.utils.utils import save_table, save_results, load_results_from_csv, save_table_to_csv, getLines, empty_table
 import inquirer
 
 csvFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Data', 'csv'))
@@ -59,7 +61,7 @@ def get_user_selections():
         predictor_question = [
             inquirer.List('predictor',
                           message="Select the predictor type",
-                          choices=['One Bit Predictor', 'Two Bit Predictor'])
+                          choices=['One Bit Predictor', 'Two Bit Predictor', 'Improved Predictor'])
         ]
         predictor_type = inquirer.prompt(predictor_question)['predictor']
 
@@ -90,7 +92,8 @@ def get_user_selections():
 
 
 def process_selected_files(selected_files, sizes, predictor_type):
-    start = time.time()
+
+
     if not selected_files:
         print("No files selected. Exiting.")
         return
@@ -109,6 +112,8 @@ def process_selected_files(selected_files, sizes, predictor_type):
             concurrent.futures.wait(files_futures)
             branches = [future.result() for future in concurrent.futures.as_completed(files_futures)]
 
+            progress.update(taskLoad, completed=lines)
+            progress.remove_task(taskLoad)
 
             total_size = sum(len(branch) for branch in branches)
             taskProcess = progress.add_task("[cyan]Processing files...", total= len(sizes) * total_size )
@@ -121,40 +126,39 @@ def process_selected_files(selected_files, sizes, predictor_type):
             for future in concurrent.futures.as_completed(futures):
                 accuracies.append(future.result())
 
-    print(f"\nProcessing completed in {time.time() - start:.2f} seconds.")
+            progress.remove_task(taskProcess)
 
     # Create and display the results table
-    table = Table(title=f"{predictor_type} Results")
-    table.add_column("File Name", style="cyan", no_wrap=True)
-    table.add_column("Size", style="cyan", justify="center")
-    table.add_column("Accuracy (%)", style="magenta", justify="right")
+    table = empty_table()
 
     accuracy_index = 0
     for file in selected_files:
         for size in sizes:
-            accuracy = accuracies[accuracy_index]
-            table.add_row(file, str(size), f"{accuracy:.2f}%")
+            pred_accuracy, total_accuracy, prediction_percentage = accuracies[accuracy_index]
+            table.add_row(file, str(size), f"{pred_accuracy:.2f}%", f"{total_accuracy:.2f}%", f"{prediction_percentage:.2f}%")
             accuracy_index += 1
+
+
 
     console.print("\n")
     console.print(table)
 
     csvName = f"{predictor_type.lower().replace(' ', '_')}_results.csv"
-    save_table_to_csv(table, csvName)
-    table = load_results_from_csv(csvName)
+    save_table(table,csvName)
 
 def load_file(file_path, task):
     branch = Branch(file_path, external_progress=progress, external_task_id=task)
     return branch
 
 def process_file(branch, size, predictor_type, task):
-    #print(f"Processing {len(branch)} with size {size}...")
-    predictor = OneBitPredictor(size) if predictor_type == 'One Bit Predictor' else TwoBitPredictor(size)
-    ret = predictor.predictBranch(branch, external_progress=progress, external_task_id=task)
-
-    #print(f"--> Processed {len(branch)} with size {size}...")
-    return ret
-
+    if predictor_type == 'One Bit Predictor':
+        predictor = OneBitPredictor(size)
+    elif predictor_type == 'Two Bit Predictor':
+        predictor = TwoBitPredictor(size)
+    else:  # Improved Predictor
+        predictor = ImprovedPredictor(size)
+ 
+    return predictor.predict_branch(branch, external_progress=progress, external_task_id=task)
 def main():
     while True:
         console.print("\n[bold cyan]Branch Prediction Analysis[/bold cyan]")

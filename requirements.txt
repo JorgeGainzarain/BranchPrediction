@@ -4,3 +4,4 @@ numpy
 inquirer
 matplotlib
 seaborn
+psutil

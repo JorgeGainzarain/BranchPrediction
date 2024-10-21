@@ -1,0 +1,13 @@
+Metric,Value,Total %
+Total Branches,10000,100%
+Predicted Branches,8616,86.16%
+Default Branches,1384,13.84%
+Correct Predicted,7733,
+Miss Predicted,883,
+Correct Defaults,620,
+Overall Accuracy,,83.53%
+Predicted Accuracy,89.75%,77.33%
+Default Accuracy,44.80%,6.20%
+Predicted vs Default,+44.95%,
+Address Replacements,0,0.00%
+Replacement Skips,8412,84.12%

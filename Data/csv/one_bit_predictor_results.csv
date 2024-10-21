@@ -1,21 +1,4 @@
-File Name,Size,Accuracy (%)
-gcc-125.txt,1,58.40%
-gcc-125.txt,2,55.49%
-gcc-125.txt,4,58.40%
-gcc-125.txt,8,54.38%
-gcc-125.txt,16,61.56%
-gcc-10K.txt,1,56.37%
-gcc-10K.txt,2,58.40%
-gcc-10K.txt,4,54.31%
-gcc-10K.txt,8,59.20%
-gcc-10K.txt,16,58.40%
-gcc-8M.txt,1,53.99%
-gcc-8M.txt,2,54.63%
-gcc-8M.txt,4,52.70%
-gcc-8M.txt,8,60.14%
-gcc-8M.txt,16,52.74%
-gcc-16M.txt,1,42.47%
-gcc-16M.txt,2,39.36%
-gcc-16M.txt,4,54.78%
-gcc-16M.txt,8,37.84%
-gcc-16M.txt,16,47.80%
+Branch,Size,Prediction Accuracy (%),Total Accuracy (%),Prediction Percentage (%)
+gcc-16M.txt,16,86.05,61.86,32.48
+gcc-10K.txt,16,87.74,61.28,28.37
+gcc-8M.txt,16,84.71,72.60,39.45
