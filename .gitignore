@@ -3,8 +3,7 @@
 
 # Ignore contents of Data folder and subfolders, but keep the folder structure
 /Data/*
-!/Data/.gitkeep
 !/Data/*/
 /Data/*/*
-!/Data/txt/analyzed_files.csv
+!/Data/csv/*
 !/Data/*/.gitkeep

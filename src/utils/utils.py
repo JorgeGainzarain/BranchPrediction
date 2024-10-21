@@ -1,12 +1,11 @@
 import csv
 import os
-import time
+from itertools import pairwise
 
 from rich.console import Console
 from rich import box
 from rich.table import Table
 from colorama import init, Fore, Style
-from src.Task1 import Branch, BranchPredictor
 
 filesFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'Data', 'txt'))
 csvFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'Data', 'csv'))
@@ -14,18 +13,77 @@ csvFolder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 
 file_list = [f for f in os.listdir(filesFolder) if f.endswith('.txt')]
 file_list.sort(key=lambda x: os.path.getsize(os.path.join(filesFolder, x)))
 
-csv_file = os.path.join(csvFolder, 'optimal_sizes.csv')
-
 rich_console = Console(color_system="auto")
 init(autoreset=True)  # Initialize colorama with auto reset
 
-def print_colored(text, color=Fore.WHITE, style=Style.NORMAL, end='\n'):
-    print(f"{style}{color}{text}{Style.RESET_ALL}", end=end)
-def save_results_to_csv(table: Table, csvName: str):
+
+def saveResults(files, sizes, accuracies, nameCSV):
+    csv_file = os.path.join(csvFolder, nameCSV)
+    existing_table = load_results_from_csv(csv_file)
+    new_table = createTable(files, sizes, accuracies)
+
+    final_table = emptyTable()
+
+    if existing_table:
+        oldColumns = existing_table.columns
+        oldCells = [column.cells for column in oldColumns]
+        oldRows = list(zip(*oldCells))
+
+        #print(f"Old Rows: {oldRows}")
+
+        # Now let's declare the new rows
+        newColumns = new_table.columns
+        newCells = [column.cells for column in newColumns]
+        newRows = list(zip(*newCells))
+        #print(f"New Rows: {newRows}")
+
+        # Remove the rows that are already in the existing table
+        newRows = [row for row in newRows if row not in oldRows]
+
+        finalRows = oldRows + newRows
+        # Sort finalRows by the first element, then second, then third
+        finalRows = sorted(finalRows, key=lambda x: (
+            x[0],  # Branch name (string)
+            int(x[1]),  # Size (integer)
+            float(x[2].rstrip('%'))  # Accuracy (float, remove '%' sign)
+        ))
+
+        #print(f"Final Rows: {finalRows}")
+
+        for row in finalRows:
+            final_table.add_row(*row)
+    else:
+        final_table = new_table
+
+
+    # Save the final table to CSV
+    save_table_to_csv(final_table, nameCSV)
+
+    # Display the final table
+    rich_console.print(final_table)
+
+def emptyTable() -> Table:
+    table = Table(title="Results Table", box=box.DOUBLE_EDGE, show_header=True, header_style="bold magenta")
+
+    table.add_column("Branch", style="yellow", justify="center")
+    table.add_column("Size", style="cyan", justify="center")
+    table.add_column("Accuracy (%)", style="green", justify="center")
+    return table
+
+def createTable(files, sizes, accuracies) -> Table:
+    # Create and display the table using rich
+    table = emptyTable()
+
+    for file, size, accuracy in zip(files, sizes, accuracies):
+        table.add_row(os.path.basename(file), str(size), f"{accuracy:.2f}")
+
+    return table
+
+def save_table_to_csv(table: Table, csvName: str):
     # Ensure the directory exists
     csvPath = os.path.join(csvFolder, csvName)
     os.makedirs(os.path.dirname(csvPath), exist_ok=True)
-    
+
     with open(csvPath, 'w', newline='') as file:
         writer = csv.writer(file)
 
@@ -34,124 +92,21 @@ def save_results_to_csv(table: Table, csvName: str):
 
         # Get all cell values for each column
         column_cells = [column.cells for column in table.columns]
-        
+
         # Zip the cells from all columns to create rows
         rows = list(zip(*column_cells))
-        
+
         # Write all rows except the last one
         writer.writerows(rows[:-1])
-        
+
         # Write the last row without a newline
         if rows:
             file.write(','.join(str(cell) for cell in rows[-1]))
 
-    print_colored(f"Results saved to {csvPath}", Fore.GREEN, Style.BRIGHT)
+    print_colored(f"Table saved to {csvPath}", Fore.GREEN, Style.BRIGHT)
 
-
-def createTable(sizes, accuracies) -> Table:
-    # Create and display the table using rich
-    table = Table(title="Results Table", box=box.DOUBLE_EDGE, show_header=True, header_style="bold magenta")
-
-    table.add_column("Size", style="cyan", justify="center")
-    table.add_column("Accuracy (%)", style="green", justify="center")
-
-    for size, accuracy in zip(sizes, accuracies):
-        table.add_row(str(size), f"{accuracy:.2f}")
-
-    return table
-
-
-import concurrent.futures
-import numpy as np
-
-from rich.table import Table
-
-
-def existsOptimalSizes():
-    return os.path.exists(csv_file)
-
-def getOptimalSize():
-    if not file_list:
-        return None
-
-    start_time = time.time()
-
-    table = load_results_from_csv(csv_file) or Table(title="Best Sizes and Accuracies")
-    if not table.columns:
-        table.add_column("File Name", style="cyan")
-        table.add_column("Best Size", style="magenta")
-        table.add_column("Best Prediction Accuracy", style="green")
-        table.add_column("Approximated Execution Time (s)", style="yellow")
-
-    processed_files = set(table.columns[0].cells)
-    remaining_files = [f for f in file_list if os.path.basename(f) not in processed_files]
-
-    if not remaining_files:
-        print_colored("All files have been processed previously.", Fore.GREEN, Style.BRIGHT)
-        return table
-
-    print_colored("Processing files: " + ', '.join(remaining_files), Fore.CYAN, Style.BRIGHT)
-
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = [executor.submit(process_file, file) for file in remaining_files]
-        for future in concurrent.futures.as_completed(futures):
-            filename, best_size, best_accuracy, execution_time = future.result()
-            table.add_row(filename, str(best_size), f"{best_accuracy:.2f}%", f"{execution_time:.2f}")
-
-    save_results_to_csv(table, csv_file)
-
-    print(f"Total time for estimating sizes: {time.time() - start_time:.4f} seconds")
-
-    return table
-
-def process_file(file):
-    start_time = time.time()
-    print_colored(f"Processing {os.path.basename(file)}...", Fore.CYAN, Style.BRIGHT)
-    branch = Branch(os.path.join(filesFolder, file), progress=False)
-
-
-    rich_console.print(f"Processing time reading {file}: {time.time() - start_time:.2f} seconds")
-
-    # Start with the file length as the initial size
-    initial_size = len(branch)
-    sizes = list(np.logspace(np.log2(initial_size), 2, num=20, base=2, dtype=int))[::-1]  # Reverse order
-    sizes = sorted(set(sizes), reverse=True)  # Remove duplicates and sort in descending order
-
-    best_accuracy = 0
-    best_size = sizes[0]
-    best_execution_time = float('inf')
-
-    for size in sizes:
-        start_time = time.time()
-        predictor = BranchPredictor(size)
-        analysisTable = predictor.predictBranch(branch, progress=False)
-        execution_time = time.time() - start_time
-        rich_console.print(f"Processing time for {file} (size {size}): {execution_time:.2f} seconds")
-
-        pred_accuracy = float(list(analysisTable.columns[2].cells)[7].replace("%", ""))
-        print_colored(f"Size: {size}, Prediction accuracy: {pred_accuracy}%, Time: {execution_time:.2f}s", Fore.WHITE)
-
-        if size == sizes[0]:  # First iteration
-            best_accuracy = pred_accuracy
-            best_size = size
-            best_execution_time = execution_time
-        else:
-            # Update best results if accuracy is not worse and time is not more than 1 second worse
-            if pred_accuracy >= best_accuracy - 0.01 and execution_time <= best_execution_time + 1:
-                best_accuracy = pred_accuracy
-                best_size = size
-                best_execution_time = execution_time
-            else:
-                # If accuracy or time gets worse, stop
-                break
-
-    print_colored(f"Best size for {file}: {best_size}", Fore.GREEN, Style.BRIGHT)
-    print_colored(f"Best prediction accuracy for {file}: {best_accuracy:.2f}%", Fore.GREEN, Style.BRIGHT)
-    print_colored(f"Execution time for best size: {best_execution_time:.2f}s", Fore.GREEN, Style.BRIGHT)
-
-    return os.path.basename(file), best_size, best_accuracy, best_execution_time
-
-def load_results_from_csv(csvPath) -> Table | None:
+def load_results_from_csv(csvFile) -> Table | None:
+    csvPath = os.path.join(csvFolder, csvFile)
     try:
         with open(csvPath, 'r', newline='') as file:
             reader = csv.reader(file)
@@ -161,14 +116,28 @@ def load_results_from_csv(csvPath) -> Table | None:
             table.add_column(headers[0], style="cyan")
             table.add_column(headers[1], style="magenta")
             table.add_column(headers[2], style="green")
-            table.add_column(headers[3], style="yellow")
-            
-            processed_files = set()
-            for row in reader:
-                table.add_row(*row)
-                processed_files.add(row[0])  # Add filename to processed set
+
+            for row, next_row in pairwise(reader):
+                file, _, _ = row
+                nextFile, _, _ = next_row
+
+                if file != nextFile:
+                    table.add_row(*row,end_section=True)
+                else:
+                    table.add_row(*row)
+
             
             return table
     except Exception as e:
         print_colored(f"Error loading CSV: {e}", Fore.RED, Style.BRIGHT)
         return None
+
+def print_colored(text, color=Fore.WHITE, style=Style.NORMAL, end='\n'):
+    print(f"{style}{color}{text}{Style.RESET_ALL}", end=end)
+
+def getLines(filePath):
+    with open(filePath, 'r') as file:
+        lines = file.readlines()
+
+    return len(lines)
+
