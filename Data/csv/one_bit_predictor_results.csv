@@ -1,0 +1,16 @@
+File Name,Size,Accuracy (%)
+gcc-10K.txt,1,54.31%
+gcc-10K.txt,2,61.56%
+gcc-10K.txt,4,55.49%
+gcc-10K.txt,8,54.38%
+gcc-10K.txt,16,56.37%
+gcc-8M.txt,1,54.63%
+gcc-8M.txt,2,52.74%
+gcc-8M.txt,4,53.99%
+gcc-8M.txt,8,60.14%
+gcc-8M.txt,16,52.70%
+gcc-16M.txt,1,54.78%
+gcc-16M.txt,2,42.47%
+gcc-16M.txt,4,47.80%
+gcc-16M.txt,8,39.36%
+gcc-16M.txt,16,37.84%
