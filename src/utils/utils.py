@@ -132,6 +132,7 @@ def load_results_from_csv(csvFile) -> Table | None:
         print_colored(f"Error loading CSV: {e}", Fore.RED, Style.BRIGHT)
         return None
 
+
 def print_colored(text, color=Fore.WHITE, style=Style.NORMAL, end='\n'):
     print(f"{style}{color}{text}{Style.RESET_ALL}", end=end)
 

@@ -16,7 +16,7 @@ class OneBitPredictor:
     def predict(self, address):
         return self.history.get(address, 'T')  # Default prediction is 'T' (Taken)
 
-    def update(self, address, outcome):
+    def update(self, address, prediction, outcome):
         if address in self.history:
             del self.history[address]  # Remove to update its position (LRU)
         elif len(self.history) >= self.MAX_HISTORY_SIZE:
@@ -55,7 +55,7 @@ class OneBitPredictor:
                     correct_predictions += 1
                 total_predictions += 1
     
-                self.update(address, actual_outcome)
+                self.update(address, prediction, actual_outcome)
     
                 if progress:
                     if (i + 1) % update_interval == 0:

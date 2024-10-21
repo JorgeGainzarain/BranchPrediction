@@ -1,8 +1,7 @@
-import asyncio
 import time
 
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
+from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
 from rich.table import Table
 
 from src.models.OneBitPredictor import OneBitPredictor
@@ -137,12 +136,12 @@ def process_selected_files(selected_files, sizes, predictor_type):
             table.add_row(file, str(size), f"{accuracy:.2f}%")
             accuracy_index += 1
 
+    console.print("\n")
+    console.print(table)
+
     csvName = f"{predictor_type.lower().replace(' ', '_')}_results.csv"
     save_table_to_csv(table, csvName)
     table = load_results_from_csv(csvName)
-
-    console.print("\n")
-    console.print(table)
 
 def load_file(file_path, task):
     branch = Branch(file_path, external_progress=progress, external_task_id=task)
